@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Online MUN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Landing -->
+  <main id="home-view" class="page view" hidden>
+    <section class="hero">
+      <p class="eyebrow">Model United Nations</p>
+      <h1>Debate the world's questions, together.</h1>
+      <p class="lede">Open a committee, invite delegations with a meeting code, and run a full MUN session, from opening speeches to the final vote.</p>
+      <div class="hero-actions">
+        <a class="button primary big" href="#/create">Create Meeting</a>
+        <a class="button ghost big" href="#/join">Join Meeting</a>
+      </div>
+    </section>
+
+    <section class="records-section">
+      <div class="section-head">
+        <h2>Meeting records</h2>
+        <button id="refresh-records" class="ghost small" type="button">Refresh</button>
+      </div>
+      <ul id="records-list" class="records-list"></ul>
+    </section>
+  </main>
+
+  <!-- Create meeting -->
+  <main id="create-view" class="page view narrow" hidden>
+    <a class="back" href="#/">← Home</a>
+    <section class="card">
+      <p class="eyebrow">Create Meeting</p>
+      <h1>Set up your conference</h1>
+      <p class="lede">You'll chair this meeting. A meeting code will be generated for you to share with delegates.</p>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-setup="auto" role="tab" aria-selected="true">Automatic</button>
+        <button type="button" class="tab" data-setup="manual" role="tab" aria-selected="false">Manual</button>
+      </div>
+
+      <form id="create-form" autocomplete="off" data-setup="auto">
+        <label>Your name (Chair)
+          <input name="name" required maxlength="40" placeholder="Full name" />
+        </label>
+        <div class="auto-only auto-note">
+          <span>Committee, topic and countries are picked for you.</span>
+          <button id="shuffle" class="ghost small" type="button">Shuffle</button>
+        </div>
+        <label>Committee name
+          <input name="committeeName" required maxlength="80" placeholder="Security Council" />
+        </label>
+        <label>Agenda topic
+          <input name="topic" required maxlength="160" placeholder="Maritime security in the Red Sea" />
+        </label>
+        <div class="field">
+          <span class="field-label">Participating countries <span id="country-count" class="muted"></span></span>
+          <ul id="country-chips" class="chips"></ul>
+          <div class="inline-form manual-only">
+            <input id="country-input" list="countries" maxlength="60" placeholder="Add a country…" />
+            <button id="add-country" class="ghost" type="button">Add</button>
+          </div>
+          <datalist id="countries"></datalist>
+        </div>
+        <label>AI delegates
+          <input name="aiCount" type="number" min="0" max="10" value="3" />
+          <span class="hint">AI delegates are seated in randomly assigned countries. For now they hold seats only; they don't speak or vote yet.</span>
+        </label>
+        <p id="create-error" class="error" role="alert"></p>
+        <button class="primary" type="submit">Create meeting</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Join meeting -->
+  <main id="join-view" class="page view narrow" hidden>
+    <a class="back" href="#/">← Home</a>
+    <section class="card">
+      <p class="eyebrow">Join Meeting</p>
+      <h1>Take your seat</h1>
+      <p class="lede">Enter the meeting code you got from the meeting's creator.</p>
+      <form id="find-form" class="inline-form" autocomplete="off">
+        <input name="code" required maxlength="12" placeholder="Meeting code, e.g. K7QM4P" class="code-input" />
+        <button class="ghost" type="submit">Find</button>
+      </form>
+      <form id="join-form" autocomplete="off" hidden>
+        <div class="meeting-preview">
+          <strong id="jp-name"></strong>
+          <span id="jp-topic" class="muted"></span>
+          <span id="jp-stage" class="mode-pill"></span>
+        </div>
+        <p id="host-hint" class="hint host-hint" hidden>You created this meeting on this device, so you'll rejoin as <strong>Chair</strong>.</p>
+        <label>Your name
+          <input name="name" required maxlength="40" placeholder="Full name" />
+        </label>
+        <label class="delegate-only">Delegation
+          <select name="country"></select>
+        </label>
+        <button class="primary" type="submit">Enter committee</button>
+      </form>
+      <p id="join-error" class="error" role="alert"></p>
+    </section>
+  </main>
+
+  <!-- Meeting record -->
+  <main id="record-view" class="page view" hidden>
+    <a class="back" href="#/">← Home</a>
+    <article class="card record">
+      <p class="eyebrow">Meeting record</p>
+      <h1 id="r-title"></h1>
+      <p id="r-topic" class="lede"></p>
+      <div class="record-actions">
+        <a id="r-md" class="button primary" download>Download (.md)</a>
+        <a id="r-json" class="button ghost" download>Download (.json)</a>
+      </div>
+      <div id="r-body"></div>
+    </article>
+  </main>
+
+  <!-- Committee room -->
+  <div id="room-view" class="room view" hidden>
+    <header class="topbar">
+      <div class="title-block">
+        <p class="eyebrow">
+          <button id="copy-code" class="code-chip" type="button" title="Copy meeting code"><span id="c-code"></span></button>
+          · <span id="c-mode" class="mode-pill"></span>
+        </p>
+        <h1 id="c-name"></h1>
+        <p id="c-topic" class="topic"></p>
+      </div>
+      <div class="topbar-actions">
+        <span id="conn" class="conn" title="Connection status"></span>
+        <button id="toggle-panel" class="ghost mobile-only" type="button">Details</button>
+        <button id="end-meeting" class="ghost danger chair-ctl" type="button">End meeting</button>
+        <button id="leave" class="ghost" type="button">Leave</button>
+      </div>
+    </header>
+
+    <aside class="panel left">
+      <section>
+        <h2>Meeting flow</h2>
+        <ol id="stages" class="stages"></ol>
+        <p id="stage-hint" class="hint"></p>
+        <div class="chair-ctl row">
+          <button id="prev-stage" class="ghost" type="button">Back</button>
+          <button id="next-stage" class="primary" type="button">Next stage</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Speakers list</h2>
+        <ol id="speakers" class="speakers"></ol>
+        <p id="speakers-empty" class="muted">No delegates waiting to speak.</p>
+        <button id="raise" class="primary delegate-ctl" type="button">Raise placard</button>
+        <div class="chair-ctl row">
+          <button id="next-speaker" class="primary" type="button">Recognise next</button>
+          <button id="clear-speakers" class="ghost" type="button">Clear</button>
+        </div>
+      </section>
+
+      <section class="chair-ctl">
+        <h2>Agenda</h2>
+        <form id="topic-form" class="inline-form">
+          <input id="topic-input" maxlength="160" placeholder="Change agenda topic" />
+          <button class="ghost" type="submit">Set</button>
+        </form>
+      </section>
+    </aside>
+
+    <main class="chat">
+      <div id="vote-banner" class="vote-banner" hidden>
+        <div class="vote-head">
+          <span id="vote-kind" class="tag"></span>
+          <strong id="vote-title"></strong>
+        </div>
+        <div class="vote-buttons delegate-ctl">
+          <button type="button" data-choice="yes">For</button>
+          <button type="button" data-choice="no">Against</button>
+          <button type="button" data-choice="abstain">Abstain</button>
+        </div>
+        <p id="vote-tally" class="vote-tally"></p>
+        <button id="close-vote" class="primary chair-ctl" type="button">Close vote &amp; announce result</button>
+      </div>
+      <div id="ended-banner" class="ended-banner" hidden>
+        <strong>This meeting has ended.</strong>
+        <a id="ended-record" class="button primary small">View record</a>
+      </div>
+      <div class="chat-tabs" role="tablist">
+        <button type="button" class="chat-tab active" data-view="floor">Floor</button>
+        <button type="button" class="chat-tab" data-view="notes">Notes <span id="notes-badge" class="badge" hidden></span></button>
+      </div>
+      <ul id="messages" class="messages" aria-live="polite"></ul>
+      <form id="composer" class="composer">
+        <div class="composer-opts">
+          <select id="send-as" aria-label="Message type"></select>
+          <select id="note-to" aria-label="Note recipient" hidden></select>
+        </div>
+        <div class="composer-row">
+          <textarea id="text" rows="1" maxlength="1000" placeholder="Address the committee…"></textarea>
+          <button class="primary" type="submit">Send</button>
+        </div>
+      </form>
+    </main>
+
+    <aside class="panel right" id="roster-panel">
+      <section>
+        <h2>Motions</h2>
+        <ul id="motions" class="items"></ul>
+        <form id="motion-form" class="inline-form delegate-ctl">
+          <input id="motion-input" maxlength="300" placeholder="Motion for a 10 min moderated caucus…" />
+          <button class="ghost" type="submit">Move</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Draft resolutions</h2>
+        <ul id="resolutions" class="items"></ul>
+        <details id="resolution-drafter" class="delegate-ctl">
+          <summary>Submit a draft resolution</summary>
+          <form id="resolution-form" class="stack">
+            <input id="res-title" maxlength="120" placeholder="Title" />
+            <textarea id="res-text" rows="5" maxlength="5000" placeholder="Preambulatory and operative clauses…"></textarea>
+            <button class="primary" type="submit">Submit draft</button>
+          </form>
+        </details>
+      </section>
+
+      <section>
+        <h2>In session <span id="count" class="muted"></span></h2>
+        <ul id="roster" class="roster"></ul>
+      </section>
+    </aside>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/countries.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
